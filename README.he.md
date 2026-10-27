@@ -36,6 +36,7 @@ English: [README.md](README.md)
    - ליד **Git account** מחברים חשבון GitHub
    - במסך של GitHub, **Cloudflare Workers and Pages**: בוחרים את החשבון שלכם, ב **Repository access** בוחרים **All repositories** (העותק עוד לא קיים, אז הוא לא יופיע ב Only select), ולוחצים **Install & Authorize**
    - חוזרים לבד לטופס, ושם המשתמש שלכם מופיע ליד Git account. מסמנים **Create private Git repository**
+   - All repositories נשמע מפחיד? יש לכם ב GitHub קוד אחר שחשוב לכם? פתחו חשבון GitHub חדש רק בשביל זה. או צמצמו אחרי שהשרת עלה (בסעיף אבטחה למטה). Cloudflare עצמה [ממליצה לצמצם](https://developers.cloudflare.com/workers/ci-cd/builds/git-integration/github-integration/)
 2. בטופס ממלאים:
    - `DASH_PASSWORD`: סיסמה שתבחרו, 12 תווים לפחות. איתה נכנסים ללוח ומאשרים את ה AI
    - `TOKEN_ENC_KEY` ו `SESSION_SECRET`: שתי מחרוזות אקראיות שונות, 32 תווים לפחות. הכי פשוט ליצור אותן במחולל של מנהל הסיסמאות
