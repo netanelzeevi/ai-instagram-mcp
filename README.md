@@ -41,7 +41,8 @@ https://netanelzeevi.com/articles/claude-instagram-official-api/
      (a password manager's generator is fine)
 2. **Check.** Open `BASE/dash`. If a setting is wrong, the page says which one and what to put there.
    Fix it in `wrangler.jsonc` in your new repo (the pencil icon on GitHub); every commit redeploys.
-   When everything is right, it asks for `IG_APP_ID` and `IG_APP_SECRET`: that's the next step.
+   When everything is right, you get a sign-in page. Sign in with your password: the empty dashboard lists
+   the Meta settings for the next step at the bottom.
 3. **Meta app.** At https://developers.facebook.com/apps create an app (no "ig" or "instagram" in the
    name), use case **Manage messaging & content on Instagram**. In Business login settings:
    - OAuth redirect URI: `BASE/ig/callback`
