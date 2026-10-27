@@ -179,11 +179,11 @@ export function legalPage(kind: "privacy" | "terms"): Response {
 <li>An audit log of actions, kept for 180 days.</li>
 </ul>
 <h2>What is not stored</h2>
-<p>Posts, comments, messages and insights read from Instagram are passed to the owner's AI app when asked for, and are not saved on this server.</p>
+<p>Posts, comments, messages and insights read from Instagram are passed to the owner's AI app when asked for, and are not saved on this server. This includes comments and direct messages that other people wrote to the account, with their username.</p>
 <h2>Sharing</h2>
 <p>Data is sent only to Meta's Instagram API and to the owner's AI app. It is not sold or shared with anyone else.</p>
 <h2>Deleting your data</h2>
-<p>Remove the app in Instagram: Settings, then Apps and websites. Meta then notifies this server, which deletes everything it stores about the account. The owner can also delete the whole server at any time.</p>`
+<p>Remove the app in Instagram: Settings, then Apps and websites. Meta then notifies this server, which deletes everything it stores about the account. The owner can also delete the whole server at any time. If you wrote to this account and want your comment or message removed from a draft, send the account a direct message on Instagram.</p>`
 			: `<h1>Terms of use</h1>
 <p>This server is a self-hosted copy of the open-source project ai-instagram-mcp (AGPL-3.0), used by its owner to manage their own Instagram professional account through an AI app.</p>
 <ul>
