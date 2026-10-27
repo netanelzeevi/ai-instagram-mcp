@@ -163,3 +163,40 @@ export function accountRow(a: Account): string {
 <span class="tag">${a.approval_mode === "manual" ? "אישור ידני לכל פעולה" : "אוטומטי"}</span>
 ${health}<span class="muted">רוענן ${fmt(a.token_refreshed_at)}</span></div>`;
 }
+
+// Meta asks for a privacy policy and terms URL before an app can go Live. Every copy serves its own,
+// so nobody needs a website for it. Plain English: Meta reviews these pages, not the owner's users.
+export function legalPage(kind: "privacy" | "terms"): Response {
+	const body =
+		kind === "privacy"
+			? `<h1>Privacy policy</h1>
+<p>This server is a self-hosted copy of the open-source project ai-instagram-mcp. It is run by the person who deployed it, for their own Instagram professional account, and connects that account to their own AI app.</p>
+<h2>What is stored</h2>
+<ul>
+<li>The Instagram access token, encrypted (AES-GCM), and the account ID and username.</li>
+<li>Drafts that the AI app proposes (posts, comment replies, direct messages) until the owner approves, rejects or cancels them.</li>
+<li>Media files uploaded for publishing, deleted after publishing or after 7 days.</li>
+<li>An audit log of actions, kept for 180 days.</li>
+</ul>
+<h2>What is not stored</h2>
+<p>Posts, comments, messages and insights read from Instagram are passed to the owner's AI app when asked for, and are not saved on this server.</p>
+<h2>Sharing</h2>
+<p>Data is sent only to Meta's Instagram API and to the owner's AI app. It is not sold or shared with anyone else.</p>
+<h2>Deleting your data</h2>
+<p>Remove the app in Instagram: Settings, then Apps and websites. Meta then notifies this server, which deletes everything it stores about the account. The owner can also delete the whole server at any time.</p>`
+			: `<h1>Terms of use</h1>
+<p>This server is a self-hosted copy of the open-source project ai-instagram-mcp (AGPL-3.0), used by its owner to manage their own Instagram professional account through an AI app.</p>
+<ul>
+<li>Nothing is published, sent or hidden on Instagram until the owner approves it in the dashboard.</li>
+<li>Use must follow Instagram's Terms of Use and Meta's Platform Terms.</li>
+<li>The software is provided as is, without warranty of any kind.</li>
+</ul>`;
+	return page(kind === "privacy" ? "Privacy policy" : "Terms of use", `<article dir="ltr" lang="en">${body}</article>`);
+}
+
+/** The values to paste into the Meta app, so going Live needs no website of your own. */
+export function metaSettingsCard(base: string): string {
+	const row = (label: string, path: string) => `<tr><td>${label}</td><td><code>${esc(base + path)}</code></td></tr>`;
+	return `<div class="card"><p class="muted">מה מדביקים באפליקציה ב Meta (App settings ואז Basic, ו Business login settings):</p>
+<table>${row("Privacy policy URL", "/privacy")}${row("Terms of service URL", "/terms")}${row("OAuth redirect URI", "/ig/callback")}${row("Deauthorize callback URL", "/ig/deauthorize")}${row("Data deletion request URL", "/ig/data-deletion")}</table></div>`;
+}

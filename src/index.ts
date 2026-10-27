@@ -16,7 +16,7 @@ import {
 	sessionCookie,
 	sessionLogin,
 } from "./auth";
-import { accountRow, draftCard, esc, page } from "./dashboard";
+import { accountRow, draftCard, esc, legalPage, metaSettingsCard, page } from "./dashboard";
 import { authorizeUrl, exchangeCode, refreshAccountToken } from "./ig";
 import { createServer, type Props } from "./mcp";
 import { processDraft, runDue } from "./publisher";
@@ -175,6 +175,8 @@ app.get("/callback", async (c) => {
 // ---------- dashboard ----------
 
 app.get("/", (c) => c.redirect("/dash"));
+app.get("/privacy", () => legalPage("privacy"));
+app.get("/terms", () => legalPage("terms"));
 app.get("/dash/login", (c) => beginDashboardLogin(c.env));
 app.get("/dash/logout", () => new Response(null, { status: 302, headers: { Location: "/dash/login", "Set-Cookie": clearSessionCookie() } }));
 
@@ -211,7 +213,8 @@ app.get("/dash", async (c) => {
 <input type="file" name="file" accept="image/jpeg,video/mp4,video/quicktime" required style="width:auto">
 <select name="account">${accounts.map((a) => `<option value="${esc(a.id)}">@${esc(a.username)}</option>`).join("")}</select>
 <button>העלה</button></form><p class="muted">תמונות ב-JPEG בלבד. הקובץ נמחק אחרי הפרסום או אחרי 7 ימים.</p></div>
-<h2>אחרונים</h2>${recent.map(card).join("") || "<p class='muted'>עוד אין.</p>"}`,
+<h2>אחרונים</h2>${recent.map(card).join("") || "<p class='muted'>עוד אין.</p>"}
+<h2>הגדרות Meta</h2>${metaSettingsCard(c.env.PUBLIC_BASE_URL)}`,
 	);
 });
 
