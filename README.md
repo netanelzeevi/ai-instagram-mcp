@@ -97,11 +97,21 @@ npx wrangler secret put IG_APP_SECRET
 - MCP tools (`src/mcp.ts`), approval dashboard (`src/dashboard.ts`), publisher state machine (`src/publisher.ts`)
 - D1 for data (`migrations/`), KV for OAuth state, R2 (optional) for uploaded media
 
-## Limits (from Meta's docs)
+## What you can and can't do (checked against Meta's docs, 27.10.2026)
 
-JPEG only for images; no library music, filters or shopping tags; DMs only within 24 hours of the
-person's last message; some insights need 100+ followers and can lag up to 48 hours; 100 API posts per 24 hours.
-Using it for accounts you don't own requires Meta App Review and Business Verification.
+Can: publish an image, a carousel of up to 20 images or videos ([source](https://developers.facebook.com/docs/instagram-platform/content-publishing/)), a reel of 3 seconds to 15 minutes and a story of 3 to 60 seconds ([source](https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/media/)), and a Trial Reel shown only to non-followers ([source](https://developers.facebook.com/docs/instagram-platform/content-publishing/)); read, reply to and hide comments ([source](https://developers.facebook.com/documentation/instagram-platform/comment-moderation)); read and answer DMs ([source](https://developers.facebook.com/documentation/instagram-platform/instagram-api-with-instagram-login/messaging-api)); read insights per post, reel and story, including average watch time and the estimated skip rate ([source](https://developers.facebook.com/documentation/instagram-platform/reference/instagram-media/insights)).
+
+Can't, and limits:
+- 100 API posts per 24 hours, a carousel counts as one; the carousel section of the same page says 50 ([source](https://developers.facebook.com/docs/instagram-platform/content-publishing/))
+- JPEG images only; no shopping tags or filters ([source](https://developers.facebook.com/docs/instagram-platform/content-publishing/))
+- No Instagram music library: music tagging is for original audio only ([source](https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/media/))
+- No editing after publishing except turning comments on or off; deleting is not available with Instagram Login ([source](https://developers.facebook.com/docs/instagram-platform/reference/instagram-media/))
+- DMs only to people who wrote first, usually within 24 hours of their last message; no group chats ([source](https://developers.facebook.com/documentation/instagram-platform/instagram-api-with-instagram-login/messaging-api))
+- Insights can lag up to 48 hours, story insights last 24 hours, reels have no profile visits or follows ([source](https://developers.facebook.com/documentation/instagram-platform/reference/instagram-media/insights)); some metrics need 100+ followers ([source](https://developers.facebook.com/documentation/instagram-platform/insights))
+- Your own accounts only; other people's accounts need App Review ([source](https://developers.facebook.com/documentation/instagram-platform/comment-moderation))
+- Claude Free allows one custom connector ([source](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp))
+
+The API also offers collaborators, user tags, location and reel audio names; this template does not use them yet ([source](https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/media/)).
 
 ## Local test
 

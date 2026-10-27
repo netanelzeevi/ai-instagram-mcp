@@ -135,14 +135,36 @@ English: [README.md](README.md)
 | "יותר מדי ניסיונות" | מחכים רבע שעה |
 | ה AI לא רואה תגובות או הודעות | שלב 4: האפליקציה עוד לא ב Live |
 
-## מה לא עובד דרך ה API
+## מה אפשר ומה אי אפשר
 
-- תמונות לפרסום: JPEG בלבד
-- אין מוזיקה מהספרייה של אינסטגרם, פילטרים או תגי שופינג
-- הודעה פרטית אפשר לשלוח רק בתוך 24 שעות מההודעה האחרונה של האדם
-- חלק מהסטטיסטיקות דורשות 100 עוקבים ומעלה, ויכולות להתעכב עד 48 שעות
-- העלאת קבצים ישירות לשרת היא תוספת: מפעילים R2 ב Cloudflare (ייתכן שיבקשו כרטיס אשראי, יש מכסה חינמית). בלי זה נותנים ל AI קישור ציבורי לתמונה או לסרטון
-- החיבור מיועד לחשבונות שלכם. כדי לחבר חשבונות של לקוחות צריך App Review ואימות עסק מול Meta
+נבדק מול התיעוד הרשמי של Meta ב 27.10.2026. ליד כל שורה יש קישור לעמוד.
+
+**מה אפשר**
+- תמונה ([מקור](https://developers.facebook.com/docs/instagram-platform/content-publishing/))
+- קרוסלה של עד 20 תמונות, סרטונים או שילוב ([מקור](https://developers.facebook.com/docs/instagram-platform/content-publishing/))
+- ריל באורך 3 שניות עד 15 דקות, עם כיסוי, בפיד או רק בלשונית הרילים ([מקור](https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/media/))
+- סטורי, תמונה או סרטון באורך 3 עד 60 שניות ([מקור](https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/media/))
+- Trial Reel, שמוצג רק למי שלא עוקב, ועובר לעוקבים ידנית או אוטומטית אם הוא מצליח ([מקור](https://developers.facebook.com/docs/instagram-platform/content-publishing/))
+- לקרוא תגובות, לענות ולהסתיר ([מקור](https://developers.facebook.com/documentation/instagram-platform/comment-moderation))
+- לקרוא הודעות פרטיות ולענות ([מקור](https://developers.facebook.com/documentation/instagram-platform/instagram-api-with-instagram-login/messaging-api))
+- סטטיסטיקות לכל פוסט, ריל וסטורי, כולל זמן צפייה ממוצע ואחוז דילוג ברילים. Meta מגדירה את אחוז הדילוג כהערכה ([מקור](https://developers.facebook.com/documentation/instagram-platform/reference/instagram-media/insights))
+
+**מה אי אפשר, ומגבלות**
+- עד 100 פוסטים ב 24 שעות, וקרוסלה נספרת כאחד. בסעיף הקרוסלות כתוב 50, אז בטוח יותר לחשוב על 50 ([מקור](https://developers.facebook.com/docs/instagram-platform/content-publishing/))
+- תמונות JPEG בלבד ([מקור](https://developers.facebook.com/docs/instagram-platform/content-publishing/))
+- אין תגי מוצרים ואין פילטרים ([מקור](https://developers.facebook.com/docs/instagram-platform/content-publishing/))
+- אין מוזיקה מהספרייה של אינסטגרם: תיוג מוזיקה רק לסאונד מקורי ([מקור](https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/media/))
+- אין עריכה אחרי פרסום, רק הפעלה וכיבוי של תגובות. גם מחיקה לא זמינה בחיבור הזה ([מקור](https://developers.facebook.com/docs/instagram-platform/reference/instagram-media/))
+- Alt text רק לתמונות ([מקור](https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/media/))
+- הודעה פרטית רק למי שכתב לכם קודם, ובדרך כלל בתוך 24 שעות מההודעה שלו. אין קבוצות ([מקור](https://developers.facebook.com/documentation/instagram-platform/instagram-api-with-instagram-login/messaging-api))
+- סטטיסטיקות מתעכבות עד 48 שעות, של סטורי זמינות 24 שעות, וברילים אין כניסות לפרופיל ועוקבים חדשים ([מקור](https://developers.facebook.com/documentation/instagram-platform/reference/instagram-media/insights))
+- מתחת ל 100 עוקבים חלק מהמדדים לא זמינים ([מקור](https://developers.facebook.com/documentation/instagram-platform/insights))
+- רק החשבונות שלכם. חשבונות של לקוחות דורשים App Review ([מקור](https://developers.facebook.com/documentation/instagram-platform/comment-moderation))
+- ב Claude: בתוכנית החינמית connector מותאם אחד, וב Team רק Owner מוסיף ([מקור](https://support.claude.com/en/articles/11175166-get-started-with-custom-connectors-using-remote-mcp))
+
+**ה API מאפשר, והתבנית עוד לא:** שותפים (collaborators), תיוג אנשים, מיקום ושם לסאונד של ריל ([מקור](https://developers.facebook.com/docs/instagram-platform/instagram-graph-api/reference/ig-user/media/)).
+
+העלאת קבצים ישירות לשרת היא תוספת: מפעילים R2 ב Cloudflare (ייתכן שיבקשו כרטיס אשראי, יש מכסה חינמית). בלי זה נותנים ל AI קישור ציבורי לתמונה או לסרטון.
 
 ## אבטחה, בקצרה
 
