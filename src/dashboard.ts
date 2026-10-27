@@ -177,6 +177,7 @@ export function legalPage(kind: "privacy" | "terms"): Response {
 <li>Drafts that the AI app proposes (posts, comment replies, direct messages) until the owner approves, rejects or cancels them.</li>
 <li>Media files uploaded for publishing, deleted after publishing or after 7 days.</li>
 <li>An audit log of actions, kept for 180 days.</li>
+<li>Technical request logs kept by the hosting provider (Cloudflare), such as IP address and time.</li>
 </ul>
 <h2>What is not stored</h2>
 <p>Posts, comments, messages and insights read from Instagram are passed to the owner's AI app when asked for, and are not saved on this server. This includes comments and direct messages that other people wrote to the account, with their username.</p>
