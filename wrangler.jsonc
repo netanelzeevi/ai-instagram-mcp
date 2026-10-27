@@ -1,0 +1,44 @@
+/**
+ * ai-instagram-mcp - one HTTPS MCP server for Claude (or any MCP client),
+ * on top of the official Instagram API with Instagram Login.
+ *
+ * Deploy to Cloudflare creates the KV namespace and the D1 database for you (no ids needed here)
+ * and asks for TOKEN_ENC_KEY and SESSION_SECRET (listed in .dev.vars.example).
+ * Add the other four secrets later in the dashboard: Worker > Settings > Variables and Secrets:
+ *   GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET  - GitHub OAuth app used to sign in
+ *   IG_APP_ID, IG_APP_SECRET                - "Instagram app ID/secret" from the Meta app dashboard
+ * Never commit a secret to this file.
+ */
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "ai-instagram-mcp",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "vars": {
+    // The exact public URL of this Worker, lowercase: https://<worker name>.<your subdomain>.workers.dev
+    // If it is wrong, /dash shows the right value to put here.
+    "PUBLIC_BASE_URL": "https://ai-instagram-mcp.your-subdomain.workers.dev",
+    // Comma-separated GitHub logins allowed to sign in. Usually just yours.
+    "ALLOWED_GITHUB_LOGINS": "your-github-login",
+    "IG_API_VERSION": "v26.0",
+    "IG_SCOPES": "instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_insights,instagram_business_manage_messages,instagram_business_content_publish"
+  },
+  // No ids: Cloudflare provisions both on the first deploy and links them to the Worker.
+  "kv_namespaces": [{ "binding": "OAUTH_KV" }],
+  "d1_databases": [{ "binding": "DB", "database_name": "ig_mcp", "migrations_dir": "migrations" }],
+  // Optional, for uploading files from /dash: enable R2 in the dashboard first, then uncomment:
+  // "r2_buckets": [{ "binding": "MEDIA", "bucket_name": "ai-instagram-mcp-media" }],
+  "triggers": {
+    // every 5 minutes: scheduled publishing; 03:17 UTC daily: token refresh + cleanup
+    "crons": ["*/5 * * * *", "17 3 * * *"]
+  },
+  // OAuth callbacks are registered for one URL, so preview URLs would only fail.
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "dev": { "port": 8788 },
+  "secrets": {
+    // GITHUB_* and IG_APP_* are also needed; until they are set, the routes that use them answer 503.
+    "required": ["TOKEN_ENC_KEY", "SESSION_SECRET"]
+  }
+}

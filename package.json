@@ -1,0 +1,49 @@
+{
+  "name": "ai-instagram-mcp",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "npm run db:migrate && wrangler deploy",
+    "db:migrate": "wrangler d1 migrations apply DB --remote",
+    "dev": "wrangler dev",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cloudflare/workers-oauth-provider": "^1.2.4",
+    "@modelcontextprotocol/server": "^2.3.1",
+    "agents": "^0.30.1",
+    "hono": "^4.13.13",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20261024.1",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.152.0"
+  },
+  "overrides": {
+    "undici": "7.30.1"
+  },
+  "cloudflare": {
+    "bindings": {
+      "TOKEN_ENC_KEY": {
+        "description": "Encrypts your Instagram token. Any random string of **32 or more** characters, for example from your password manager's generator. Keep it secret and don't reuse it."
+      },
+      "SESSION_SECRET": {
+        "description": "Signs your dashboard login. Another random string of **32 or more** characters, different from `TOKEN_ENC_KEY`."
+      },
+      "PUBLIC_BASE_URL": {
+        "description": "This Worker's address, lowercase: `https://<worker name>.<your subdomain>.workers.dev`. Not sure? Deploy anyway: `/dash` will show the exact value to put here."
+      },
+      "ALLOWED_GITHUB_LOGINS": {
+        "description": "Your GitHub username. Only these logins can open the dashboard and connect an MCP client. Comma-separated for more than one."
+      },
+      "OAUTH_KV": {
+        "description": "Stores OAuth state for MCP clients. Create a new one."
+      },
+      "DB": {
+        "description": "Holds your Instagram account, drafts and the audit log. Create a new one."
+      }
+    }
+  }
+}

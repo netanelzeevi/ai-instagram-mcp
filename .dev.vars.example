@@ -1,0 +1,2 @@
+TOKEN_ENC_KEY=replace-with-a-random-string-of-32-or-more-characters # encrypts the Instagram token
+SESSION_SECRET=replace-with-another-random-string-of-32-or-more-characters # signs the dashboard session
