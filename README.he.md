@@ -38,6 +38,7 @@ English: [README.md](README.md)
    - ליד **Git account** מחברים חשבון GitHub
    - במסך של GitHub, **Cloudflare Workers and Pages**: בוחרים את החשבון שלכם, ב **Repository access** בוחרים **All repositories** (העותק עוד לא קיים, אז הוא לא יופיע ב Only select), ולוחצים **Install & Authorize**
    - חוזרים לבד לטופס, ושם המשתמש שלכם מופיע ליד Git account. מסמנים **Create private Git repository**
+   - **חשוב:** החיבור ל GitHub עוד לא יוצר את העותק. הוא נוצר רק כשלוחצים **Create and deploy** בסוף הטופס. לא בוחרים ריפו ולא עושים clone. מבקשים מכם לבחור ריפו? לוחצים שוב על כפתור Deploy to Cloudflare
    - All repositories נשמע מפחיד? יש לכם ב GitHub קוד אחר שחשוב לכם? פתחו חשבון GitHub חדש רק בשביל זה. או צמצמו אחרי שהשרת עלה (בסעיף אבטחה למטה). Cloudflare עצמה [ממליצה לצמצם](https://developers.cloudflare.com/workers/ci-cd/builds/git-integration/github-integration/)
 2. בטופס ממלאים:
    - `DASH_PASSWORD`: סיסמה שתבחרו, 12 תווים לפחות. איתה נכנסים ללוח ומאשרים את ה AI
@@ -137,6 +138,7 @@ English: [README.md](README.md)
 | `/dash` אומר שהכתובת לא תואמת | מעתיקים את הכתובת שהוא מציג ל `PUBLIC_BASE_URL` ב `wrangler.jsonc` בעותק שלכם ב GitHub |
 | "חסר: IG_APP_ID" כשלוחצים "חבר חשבון" | שלב 2, סעיף 6 |
 | GitHub מבקש הרשאות ואין לכם ריפו | זה תקין. All repositories ← Install & Authorize. Cloudflare יוצר את העותק בעצמו (שלב 1) |
+| חיברתי את GitHub ואין לי שם ריפו | תקין. העותק נוצר רק אחרי Create and deploy בטופס של Cloudflare |
 | אחרי Install & Authorize מבקשים לבחור ריפו | לא בוחרים ולא עושים clone. לוחצים שוב על Deploy to Cloudflare בראש הדף, והפעם נפתח הטופס |
 | "Insufficient Developer Role" באינסטגרם | שלב 2, סעיף 7: ה Tester לא אושר באינסטגרם |
 | "הסיסמה לא נכונה" | זו הסיסמה מ `DASH_PASSWORD`. שכחתם? ב Cloudflare ← Settings ← Variables and Secrets מחליפים אותה |
