@@ -137,6 +137,7 @@ English: [README.md](README.md)
 | `/dash` אומר שהכתובת לא תואמת | מעתיקים את הכתובת שהוא מציג ל `PUBLIC_BASE_URL` ב `wrangler.jsonc` בעותק שלכם ב GitHub |
 | "חסר: IG_APP_ID" כשלוחצים "חבר חשבון" | שלב 2, סעיף 6 |
 | GitHub מבקש הרשאות ואין לכם ריפו | זה תקין. All repositories ← Install & Authorize. Cloudflare יוצר את העותק בעצמו (שלב 1) |
+| אחרי Install & Authorize מבקשים לבחור ריפו | לא בוחרים ולא עושים clone. לוחצים שוב על Deploy to Cloudflare בראש הדף, והפעם נפתח הטופס |
 | "Insufficient Developer Role" באינסטגרם | שלב 2, סעיף 7: ה Tester לא אושר באינסטגרם |
 | "הסיסמה לא נכונה" | זו הסיסמה מ `DASH_PASSWORD`. שכחתם? ב Cloudflare ← Settings ← Variables and Secrets מחליפים אותה |
 | "יותר מדי ניסיונות" | מחכים רבע שעה |
