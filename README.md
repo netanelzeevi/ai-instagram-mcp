@@ -4,6 +4,8 @@ Connect your own Instagram professional account to Claude, or to any AI app that
 through Meta's official **Instagram API with Instagram Login**. Your copy runs on your own free
 Cloudflare account. No passwords, no browser automation, and nothing public happens without your click.
 
+> **Don't copy anything.** No download, no fork, no new repo. Just click this button: it creates your own copy for you.
+
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/netanelzeevi/ai-instagram-mcp)
 
 Hebrew README: [README.he.md](README.he.md). Full step-by-step guide (Hebrew, with screenshots):

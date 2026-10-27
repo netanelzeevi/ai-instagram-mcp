@@ -4,6 +4,8 @@
 
 תבנית פתוחה לשרת קטן שמחבר את חשבון האינסטגרם המקצועי שלכם ל Claude, או לכל אפליקציית AI שתומכת ב MCP, דרך ה API הרשמי של Meta. השרת רץ בחשבון Cloudflare החינמי שלכם, והכל נשאר אצלכם: בלי כלי צד ג׳, בלי לתת סיסמה של אינסטגרם, ושום דבר פומבי לא יוצא בלי לחיצה שלכם.
 
+> **לא מעתיקים כלום.** לא מורידים קבצים, לא עושים Fork ולא יוצרים ריפו. רק לוחצים על הכפתור הזה, והוא יוצר לכם עותק לבד:
+
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/netanelzeevi/ai-instagram-mcp)
 
 המדריך המלא עם צילומי מסך: https://netanelzeevi.com/articles/claude-instagram-official-api/
