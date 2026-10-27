@@ -1,53 +1,15 @@
-// Sign-in: GitHub is the identity provider for both the MCP OAuth flow and the dashboard.
-// Only logins in ALLOWED_GITHUB_LOGINS get in.
+// Sign-in: one owner per server, with the password chosen at deploy time (DASH_PASSWORD).
+// It guards both the dashboard and the consent page every MCP client goes through.
 
-import { randomId } from "./store";
+import { page } from "./dashboard";
 
 const enc = new TextEncoder();
+export const OWNER = "owner";
 export const SESSION_COOKIE = "__Host-igmcp_session";
-const DASH_STATE_COOKIE = "__Host-igmcp_dash_state";
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000;
-
-export function allowedLogins(env: Env): Set<string> {
-	return new Set(
-		env.ALLOWED_GITHUB_LOGINS.split(",")
-			.map((s) => s.trim().toLowerCase())
-			.filter(Boolean),
-	);
-}
-
-export function githubAuthorizeUrl(env: Env, state: string): string {
-	const u = new URL("https://github.com/login/oauth/authorize");
-	u.searchParams.set("client_id", env.GITHUB_CLIENT_ID);
-	u.searchParams.set("redirect_uri", `${env.PUBLIC_BASE_URL}/callback`);
-	u.searchParams.set("scope", "read:user");
-	u.searchParams.set("state", state);
-	u.searchParams.set("allow_signup", "false");
-	return u.href;
-}
-
-/** Exchanges a GitHub code and returns the login. The GitHub token is used once and dropped. */
-export async function githubLogin(env: Env, code: string): Promise<string> {
-	const res = await fetch("https://github.com/login/oauth/access_token", {
-		method: "POST",
-		headers: { Accept: "application/json", "Content-Type": "application/x-www-form-urlencoded" },
-		body: new URLSearchParams({
-			client_id: env.GITHUB_CLIENT_ID,
-			client_secret: env.GITHUB_CLIENT_SECRET,
-			code,
-			redirect_uri: `${env.PUBLIC_BASE_URL}/callback`,
-		}),
-	});
-	const body = (await res.json()) as { access_token?: string; error?: string };
-	if (!body.access_token) throw new Error(`GitHub sign-in failed: ${body.error ?? res.status}`);
-	const user = await fetch("https://api.github.com/user", {
-		headers: { Authorization: `Bearer ${body.access_token}`, "User-Agent": "ai-instagram-mcp", Accept: "application/vnd.github+json" },
-	});
-	if (!user.ok) throw new Error(`GitHub user lookup failed: ${user.status}`);
-	return ((await user.json()) as { login: string }).login;
-}
-
-// ---------- signed session cookie for the dashboard ----------
+const MIN_PASSWORD = 12;
+const MAX_FAILS = 10;
+const FAIL_WINDOW_S = 15 * 60;
 
 async function hmac(env: Env, data: string): Promise<string> {
 	const key = await crypto.subtle.importKey("raw", enc.encode(env.SESSION_SECRET), { name: "HMAC", hash: "SHA-256" }, false, [
@@ -64,7 +26,7 @@ function timingSafeEqual(a: string, b: string): boolean {
 	return r === 0;
 }
 
-function cookie(req: Request, name: string): string | undefined {
+export function readCookie(req: Request, name: string): string | undefined {
 	const raw = req.headers.get("Cookie") ?? "";
 	for (const part of raw.split(/;\s*/)) {
 		const i = part.indexOf("=");
@@ -73,8 +35,30 @@ function cookie(req: Request, name: string): string | undefined {
 	return undefined;
 }
 
-export async function sessionCookie(env: Env, login: string): Promise<string> {
-	const value = `${login}|${Date.now() + SESSION_TTL_MS}`;
+// shortcut: KV counts are eventually consistent, so a burst from many edge locations can slip a few
+// extra tries past MAX_FAILS; move the counter to D1 if this server ever faces real brute force.
+function failKey(req: Request): string {
+	return `pwfail:${req.headers.get("CF-Connecting-IP") ?? "unknown"}`;
+}
+
+/**
+ * Checks a submitted password. Both sides are HMACed first, so the comparison is
+ * constant-time whatever the lengths. Returns an error message to show, or null when it matches.
+ */
+export async function checkPassword(env: Env, req: Request, submitted: string): Promise<string | null> {
+	const key = failKey(req);
+	const fails = Number((await env.OAUTH_KV.get(key)) ?? 0);
+	if (fails >= MAX_FAILS) return "יותר מדי ניסיונות. מחכים רבע שעה ומנסים שוב.";
+	if (timingSafeEqual(await hmac(env, submitted), await hmac(env, env.DASH_PASSWORD))) {
+		await env.OAUTH_KV.delete(key);
+		return null;
+	}
+	await env.OAUTH_KV.put(key, String(fails + 1), { expirationTtl: FAIL_WINDOW_S });
+	return "הסיסמה לא נכונה.";
+}
+
+export async function sessionCookie(env: Env): Promise<string> {
+	const value = `${OWNER}|${Date.now() + SESSION_TTL_MS}`;
 	const signed = `${value}|${await hmac(env, value)}`;
 	return `${SESSION_COOKIE}=${encodeURIComponent(signed)}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=${SESSION_TTL_MS / 1000}`;
 }
@@ -84,38 +68,25 @@ export function clearSessionCookie(): string {
 }
 
 export async function sessionLogin(env: Env, req: Request): Promise<string | null> {
-	const raw = cookie(req, SESSION_COOKIE);
+	const raw = readCookie(req, SESSION_COOKIE);
 	if (!raw) return null;
 	const [login, exp, sig] = raw.split("|");
-	if (!login || !exp || !sig) return null;
+	if (login !== OWNER || !exp || !sig) return null;
 	if (!timingSafeEqual(sig, await hmac(env, `${login}|${exp}`))) return null;
 	if (Number(exp) < Date.now()) return null;
-	if (!allowedLogins(env).has(login.toLowerCase())) return null;
 	return login;
 }
 
-/** Dashboard sign-in: state is prefixed so /callback can tell it apart from the MCP flow. */
-export function beginDashboardLogin(env: Env): Response {
-	const state = `dash.${randomId(18)}`;
-	return new Response(null, {
-		status: 302,
-		headers: {
-			Location: githubAuthorizeUrl(env, state),
-			"Set-Cookie": `${DASH_STATE_COOKIE}=${state}; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=600`,
-		},
-	});
+export function loginPage(error?: string): Response {
+	return page(
+		"כניסה",
+		`<h1>כניסה ללוח האישורים</h1>
+${error ? `<p class="bad">${error}</p>` : ""}
+<form method="post" action="/dash/login" class="card">
+<label>הסיסמה שבחרתם בהתקנה (DASH_PASSWORD)<input type="password" name="password" autocomplete="current-password" required autofocus></label>
+<p><button>כניסה</button></p></form>`,
+	);
 }
-
-export function checkDashboardState(req: Request, state: string): boolean {
-	const expected = cookie(req, DASH_STATE_COOKIE);
-	return !!expected && timingSafeEqual(expected, state);
-}
-
-export function clearDashStateCookie(): string {
-	return `${DASH_STATE_COOKIE}=; Path=/; Secure; HttpOnly; SameSite=Lax; Max-Age=0`;
-}
-
-export { cookie as readCookie };
 
 // Settings a fresh copy of the template gets wrong. Each one says exactly what to change.
 export function configProblem(env: Env, requestUrl: URL): string | null {
@@ -127,9 +98,8 @@ export function configProblem(env: Env, requestUrl: URL): string | null {
 	if (!base || base.origin !== requestUrl.origin || env.PUBLIC_BASE_URL !== base.origin) {
 		return `הכתובת ב PUBLIC_BASE_URL לא תואמת את השרת. ב wrangler.jsonc משנים אותה ל ${requestUrl.origin} (בלי / בסוף), ושומרים.`;
 	}
-	const logins = allowedLogins(env);
-	if (logins.size === 0 || logins.has("your-github-login")) {
-		return "ב ALLOWED_GITHUB_LOGINS עדיין לא מופיע שם המשתמש שלכם ב GitHub. משנים אותו ב wrangler.jsonc ושומרים.";
+	if ((env.DASH_PASSWORD ?? "").length < MIN_PASSWORD) {
+		return `הסיסמה DASH_PASSWORD צריכה להיות באורך ${MIN_PASSWORD} תווים לפחות. מחליפים אותה ב Settings ואז Variables and Secrets.`;
 	}
 	if ((env.SESSION_SECRET ?? "").length < 32 || (env.TOKEN_ENC_KEY ?? "").length < 32) {
 		return "SESSION_SECRET ו TOKEN_ENC_KEY צריכים להיות באורך 32 תווים לפחות. מחליפים אותם ב Settings ואז Variables and Secrets.";

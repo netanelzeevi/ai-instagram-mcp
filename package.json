@@ -26,6 +26,9 @@
   },
   "cloudflare": {
     "bindings": {
+      "DASH_PASSWORD": {
+        "description": "Your password for this server: it opens the dashboard and approves each AI app you connect. At least **12** characters; a password manager's generator is ideal. Keep it to yourself."
+      },
       "TOKEN_ENC_KEY": {
         "description": "Encrypts your Instagram token. Any random string of **32 or more** characters, for example from your password manager's generator. Keep it secret and don't reuse it."
       },
@@ -34,9 +37,6 @@
       },
       "PUBLIC_BASE_URL": {
         "description": "This Worker's address, lowercase: `https://<worker name>.<your subdomain>.workers.dev`. Not sure? Deploy anyway: `/dash` will show the exact value to put here."
-      },
-      "ALLOWED_GITHUB_LOGINS": {
-        "description": "Your GitHub username. Only these logins can open the dashboard and connect an MCP client. Comma-separated for more than one."
       },
       "OAUTH_KV": {
         "description": "Stores OAuth state for MCP clients. Create a new one."

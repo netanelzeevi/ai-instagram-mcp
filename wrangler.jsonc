@@ -3,10 +3,9 @@
  * on top of the official Instagram API with Instagram Login.
  *
  * Deploy to Cloudflare creates the KV namespace and the D1 database for you (no ids needed here)
- * and asks for TOKEN_ENC_KEY and SESSION_SECRET (listed in .dev.vars.example).
- * Add the other four secrets later in the dashboard: Worker > Settings > Variables and Secrets:
- *   GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET  - GitHub OAuth app used to sign in
- *   IG_APP_ID, IG_APP_SECRET                - "Instagram app ID/secret" from the Meta app dashboard
+ * and asks for DASH_PASSWORD, TOKEN_ENC_KEY and SESSION_SECRET (listed in .dev.vars.example).
+ * Add the other two secrets later in the dashboard: Worker > Settings > Variables and Secrets:
+ *   IG_APP_ID, IG_APP_SECRET  - "Instagram app ID/secret" from the Meta app dashboard
  * Never commit a secret to this file.
  */
 {
@@ -19,8 +18,6 @@
     // The exact public URL of this Worker, lowercase: https://<worker name>.<your subdomain>.workers.dev
     // If it is wrong, /dash shows the right value to put here.
     "PUBLIC_BASE_URL": "https://ai-instagram-mcp.your-subdomain.workers.dev",
-    // Comma-separated GitHub logins allowed to sign in. Usually just yours.
-    "ALLOWED_GITHUB_LOGINS": "your-github-login",
     "IG_API_VERSION": "v26.0",
     "IG_SCOPES": "instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_insights,instagram_business_manage_messages,instagram_business_content_publish"
   },
@@ -38,7 +35,7 @@
   "observability": { "enabled": true },
   "dev": { "port": 8788 },
   "secrets": {
-    // GITHUB_* and IG_APP_* are also needed; until they are set, the routes that use them answer 503.
-    "required": ["TOKEN_ENC_KEY", "SESSION_SECRET"]
+    // IG_APP_ID and IG_APP_SECRET are also needed; until they are set, the Instagram routes answer 503.
+    "required": ["DASH_PASSWORD", "TOKEN_ENC_KEY", "SESSION_SECRET"]
   }
 }

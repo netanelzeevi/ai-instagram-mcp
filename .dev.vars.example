@@ -1,2 +1,3 @@
+DASH_PASSWORD=replace-with-your-own-password-of-12-or-more-characters # opens the dashboard and approves AI apps
 TOKEN_ENC_KEY=replace-with-a-random-string-of-32-or-more-characters # encrypts the Instagram token
 SESSION_SECRET=replace-with-another-random-string-of-32-or-more-characters # signs the dashboard session

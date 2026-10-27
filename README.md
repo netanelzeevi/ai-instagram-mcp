@@ -32,31 +32,32 @@ https://netanelzeevi.com/articles/claude-instagram-official-api/
 `BASE` below is your server's address, `https://ai-instagram-mcp.<your-subdomain>.workers.dev`.
 
 1. **Deploy.** Press **Deploy to Cloudflare** above. Cloudflare copies this repo to your GitHub,
-   creates the KV namespace and the D1 database, runs the database migration and deploys.
+   creates the KV namespace and the D1 database, runs the database migrations and deploys.
    In the form:
-   - `ALLOWED_GITHUB_LOGINS`: your GitHub username
+   - `DASH_PASSWORD`: your password for this server, 12+ characters. It opens the dashboard and
+     approves every AI app you connect
    - `PUBLIC_BASE_URL`: `BASE`, lowercase. Not sure? Leave it: `/dash` tells you the exact value
    - `TOKEN_ENC_KEY` and `SESSION_SECRET`: two different random strings of 32+ characters
      (a password manager's generator is fine)
 2. **Check.** Open `BASE/dash`. If a setting is wrong, the page says which one and what to put there.
    Fix it in `wrangler.jsonc` in your new repo (the pencil icon on GitHub); every commit redeploys.
-3. **GitHub sign-in.** Create an OAuth app at https://github.com/settings/applications/new
-   with Homepage `BASE` and callback `BASE/callback`. Add `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`
-   as **Secrets** in the Cloudflare dashboard: your Worker > Settings > Variables and Secrets > Add.
-4. **Meta app.** At https://developers.facebook.com/apps create an app (no "ig" or "instagram" in the
+   When everything is right, it asks for `IG_APP_ID` and `IG_APP_SECRET`: that's the next step.
+3. **Meta app.** At https://developers.facebook.com/apps create an app (no "ig" or "instagram" in the
    name), use case **Manage messaging & content on Instagram**. In Business login settings:
    - OAuth redirect URI: `BASE/ig/callback`
    - Deauthorize callback URL: `BASE/ig/deauthorize`
    - Data deletion request URL: `BASE/ig/data-deletion`
 
-   Add the **Instagram app ID** and **Instagram app secret** (not the Meta App ID) as Secrets
-   `IG_APP_ID` and `IG_APP_SECRET`, the same way as in step 3.
-5. **Tester role.** The app stays in development mode, so add your Instagram account under
-   App roles > Roles as **Instagram Tester** and accept the invite in Instagram
-   (instagram.com/accounts/manage_access > Tester invites). Without it, login fails with
-   "Insufficient Developer Role".
-6. **Connect Instagram.** `BASE/dash` > sign in with GitHub > connect your Instagram account.
-7. **Connect your AI app** with the MCP address `BASE/mcp` (below).
+   Add the **Instagram app ID** and **Instagram app secret** (not the Meta App ID) as **Secrets**
+   `IG_APP_ID` and `IG_APP_SECRET` in the Cloudflare dashboard: your Worker > Settings > Variables and Secrets > Add.
+4. **Tester role.** Add your Instagram account under App roles > Roles as **Instagram Tester** and
+   accept the invite in Instagram (instagram.com/accounts/manage_access > Tester invites).
+   Without it, login fails with "Insufficient Developer Role".
+5. **Connect Instagram.** `BASE/dash` > your password > connect your Instagram account.
+6. **Go Live.** In the Meta app, App settings > Basic: paste the **Privacy policy URL** (`BASE/privacy`)
+   and **Terms of service URL** (`BASE/terms`) that your server serves, pick an icon and a category,
+   then switch App Mode at the top to **Live**. `/dash` lists every value to paste.
+7. **Connect your AI app** with the MCP address `BASE/mcp` (below). The approval page asks for your password.
 
 Never paste a secret into a chat, a file or this repo. Secrets go only into the Cloudflare
 dashboard (or `wrangler secret put`).
@@ -64,7 +65,7 @@ dashboard (or `wrangler secret put`).
 ## Connect an AI app
 
 The server is a remote MCP server (Streamable HTTP) with OAuth, so it should work with any MCP client
-that supports remote servers and OAuth sign-in. Every client signs in through the same GitHub allowlist.
+that supports remote servers and OAuth sign-in. Every client is approved once with your password.
 
 | App | How | Tested |
 |---|---|---|
@@ -78,13 +79,11 @@ that supports remote servers and OAuth sign-in. Every client signs in through th
 ```bash
 npm install
 npx wrangler login
-# edit wrangler.jsonc: PUBLIC_BASE_URL (lowercase) and ALLOWED_GITHUB_LOGINS
+# edit wrangler.jsonc: PUBLIC_BASE_URL (lowercase)
+npx wrangler secret put DASH_PASSWORD     # your password, 12+ characters
 openssl rand -base64 32 | npx wrangler secret put TOKEN_ENC_KEY
 openssl rand -hex 32 | npx wrangler secret put SESSION_SECRET
-npx wrangler deploy            # creates the KV namespace and the D1 database on the first run
-npm run db:migrate
-npx wrangler secret put GITHUB_CLIENT_ID
-npx wrangler secret put GITHUB_CLIENT_SECRET
+npm run deploy                            # migrations + deploy; creates KV and D1 on the first run
 npx wrangler secret put IG_APP_ID
 npx wrangler secret put IG_APP_SECRET
 ```
@@ -92,7 +91,7 @@ npx wrangler secret put IG_APP_SECRET
 ## How it is built
 
 - Cloudflare Worker + `@cloudflare/workers-oauth-provider` (OAuth 2.1 for MCP clients, `src/index.ts`)
-- GitHub OAuth sign-in, limited to `ALLOWED_GITHUB_LOGINS` (`src/auth.ts`)
+- One owner password (`DASH_PASSWORD`) for the dashboard and the consent page, with a lockout after 10 wrong tries (`src/auth.ts`)
 - Business Login for Instagram and token storage (`src/ig.ts`, `src/store.ts`)
 - MCP tools (`src/mcp.ts`), approval dashboard (`src/dashboard.ts`), publisher state machine (`src/publisher.ts`)
 - D1 for data (`migrations/`), KV for OAuth state, R2 (optional) for uploaded media
@@ -106,8 +105,11 @@ Using it for accounts you don't own requires Meta App Review and Business Verifi
 ## Local test
 
 `test/harness.ts` runs the Worker against a fake Graph API:
-`npx wrangler d1 migrations apply DB --local` once, then
-`npx wrangler dev test/harness.ts --port 8790 --persist-to .harness-state`.
+`npx wrangler d1 migrations apply DB --local --persist-to .harness-state` once, then
+`npx wrangler dev test/harness.ts --port 8790 --persist-to .harness-state` and open it: every value under `checks` should be `true`.
+
+`test/e2e.py` signs in and runs the whole MCP OAuth flow (register, consent, token, tools) against
+`npx wrangler dev --var PUBLIC_BASE_URL:http://127.0.0.1:8788`: `python3 test/e2e.py <your DASH_PASSWORD>`.
 
 ## Managed version
 

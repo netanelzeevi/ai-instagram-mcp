@@ -2,7 +2,6 @@
 
 CREATE TABLE IF NOT EXISTS accounts (
   id TEXT PRIMARY KEY,                 -- Instagram professional account ID (user_id from /me)
-  app_user_id TEXT,                    -- app-scoped ID (id from /me); Meta's deletion callbacks may send this one
   username TEXT NOT NULL,
   owner_login TEXT NOT NULL,           -- GitHub login that connected the account
   token_enc TEXT NOT NULL,             -- AES-GCM encrypted long-lived Instagram User token
@@ -15,7 +14,6 @@ CREATE TABLE IF NOT EXISTS accounts (
   updated_at INTEGER NOT NULL
 );
 CREATE INDEX IF NOT EXISTS accounts_owner ON accounts(owner_login);
-CREATE INDEX IF NOT EXISTS accounts_app_user ON accounts(app_user_id);
 
 -- Everything that changes something public on Instagram starts as a draft.
 CREATE TABLE IF NOT EXISTS drafts (

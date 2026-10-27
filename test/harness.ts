@@ -1,6 +1,6 @@
 // Local test harness (never deployed): fakes graph.instagram.com and drives the real modules.
 import { createMcpHandler } from "agents/mcp/server";
-import { configProblem } from "../src/auth";
+import { checkPassword, configProblem } from "../src/auth";
 import { refreshAccountToken } from "../src/ig";
 import { createServer } from "../src/mcp";
 import { runDue } from "../src/publisher";
@@ -120,7 +120,7 @@ export default {
 		const url = new URL("https://x.dev/dash");
 		// The generated Env types vars as literals, so the variations are cast.
 		const cfg = (o: Record<string, string> = {}) =>
-			configProblem({ ...env, PUBLIC_BASE_URL: "https://x.dev", ALLOWED_GITHUB_LOGINS: "me", SESSION_SECRET: "s".repeat(32), TOKEN_ENC_KEY: "k".repeat(32), ...o } as unknown as Env, url);
+			configProblem({ ...env, PUBLIC_BASE_URL: "https://x.dev", DASH_PASSWORD: "p".repeat(12), SESSION_SECRET: "s".repeat(32), TOKEN_ENC_KEY: "k".repeat(32), ...o } as unknown as Env, url);
 		out.checks = {
 			base64Key: await roundTrip(b64Key),
 			passphraseKey: await roundTrip("a passphrase that is long enough!!"),
@@ -128,8 +128,21 @@ export default {
 			configOk: cfg() === null,
 			wrongBaseUrl: cfg({ PUBLIC_BASE_URL: "https://other.dev" })?.includes("https://x.dev") === true,
 			trailingSlash: cfg({ PUBLIC_BASE_URL: "https://x.dev/" }) !== null,
-			placeholderLogin: cfg({ ALLOWED_GITHUB_LOGINS: "your-github-login" }) !== null,
+			shortPassword: cfg({ DASH_PASSWORD: "short" }) !== null,
 			shortSecret: cfg({ SESSION_SECRET: "short" }) !== null,
+		};
+
+		// Password sign-in: right one passes, wrong ones count, and the 11th try is locked out even if right.
+		const pwEnv = { ...env, DASH_PASSWORD: "correct horse battery" } as unknown as Env;
+		const from = (ip: string) => new Request("https://x.dev/dash/login", { headers: { "CF-Connecting-IP": ip } });
+		const ip = `t${Date.now()}`;
+		const rightFirst = (await checkPassword(pwEnv, from(ip), "correct horse battery")) === null;
+		for (let i = 0; i < 10; i++) await checkPassword(pwEnv, from(ip), "wrong");
+		out.checks = {
+			...(out.checks as object),
+			passwordRight: rightFirst,
+			passwordWrong: (await checkPassword(pwEnv, from(`${ip}b`), "wrong")) !== null,
+			passwordLockout: (await checkPassword(pwEnv, from(ip), "correct horse battery"))?.includes("ניסיונות") === true,
 		};
 
 		// Meta's deletion callback: nothing of the account may remain except the one audit row for the request.

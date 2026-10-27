@@ -6,11 +6,9 @@ interface __BaseEnv_Env {
 	MEDIA?: R2Bucket;
 	DB: D1Database;
 	PUBLIC_BASE_URL: "https://ai-instagram-mcp.your-subdomain.workers.dev";
-	ALLOWED_GITHUB_LOGINS: "your-github-login";
 	IG_API_VERSION: "v26.0";
 	IG_SCOPES: "instagram_business_basic,instagram_business_manage_comments,instagram_business_manage_insights,instagram_business_manage_messages,instagram_business_content_publish";
-	GITHUB_CLIENT_ID: string;
-	GITHUB_CLIENT_SECRET: string;
+	DASH_PASSWORD: string;
 	IG_APP_ID: string;
 	IG_APP_SECRET: string;
 	TOKEN_ENC_KEY: string;
@@ -24,7 +22,7 @@ type StringifyValues<EnvType extends Record<string, unknown>> = {
 	[Binding in keyof EnvType]: EnvType[Binding] extends string ? EnvType[Binding] : string;
 };
 declare namespace NodeJS {
-	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "PUBLIC_BASE_URL" | "ALLOWED_GITHUB_LOGINS" | "IG_API_VERSION" | "IG_SCOPES" | "GITHUB_CLIENT_ID" | "GITHUB_CLIENT_SECRET" | "IG_APP_ID" | "IG_APP_SECRET" | "TOKEN_ENC_KEY" | "SESSION_SECRET">> {}
+	interface ProcessEnv extends StringifyValues<Pick<Cloudflare.Env, "PUBLIC_BASE_URL" | "IG_API_VERSION" | "IG_SCOPES" | "DASH_PASSWORD" | "IG_APP_ID" | "IG_APP_SECRET" | "TOKEN_ENC_KEY" | "SESSION_SECRET">> {}
 }
 declare module "*.txt" {
 	const value: string;

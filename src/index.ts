@@ -3,14 +3,11 @@ import OAuthProvider, { AuthorizationError, CimdFetchError, type OAuthHelpers } 
 import { createMcpHandler } from "agents/mcp/server";
 import { Hono, type Context } from "hono";
 import {
-	allowedLogins,
-	beginDashboardLogin,
-	checkDashboardState,
-	clearDashStateCookie,
+	OWNER,
+	checkPassword,
 	clearSessionCookie,
 	configProblem,
-	githubAuthorizeUrl,
-	githubLogin,
+	loginPage,
 	readCookie,
 	sameOrigin,
 	sessionCookie,
@@ -35,7 +32,7 @@ function htmlError(message: string, status = 400): Response {
 
 // Lets the Worker deploy before every secret and binding exists; each route says what is missing.
 const NEEDS: [RegExp, (keyof Env)[]][] = [
-	[/^\/(authorize|callback|dash)/, ["GITHUB_CLIENT_ID", "GITHUB_CLIENT_SECRET"]],
+	[/^\/(authorize|dash)/, ["DASH_PASSWORD"]],
 	[/^\/(dash\/ig|ig\/)/, ["IG_APP_ID", "IG_APP_SECRET"]],
 	[/^\/(dash\/upload|m\/|u\/)/, ["MEDIA"]],
 ];
@@ -48,7 +45,7 @@ app.onError((e) => {
 app.use("*", async (c, next) => {
 	const url = new URL(c.req.url);
 	const path = url.pathname;
-	if (/^\/(authorize|callback|dash|ig\/callback)/.test(path)) {
+	if (/^\/(authorize|dash|ig\/callback)/.test(path)) {
 		const problem = configProblem(c.env, url);
 		if (problem) return htmlError(problem, 503);
 	}
@@ -62,9 +59,9 @@ async function requireLogin(c: Context<AppEnv>): Promise<string | Response> {
 	return login ?? c.redirect("/dash/login");
 }
 
-// ---------- MCP OAuth: consent page, then GitHub ----------
+// ---------- MCP OAuth: consent page with the owner's password ----------
 
-// Chrome applies form-action to the redirects after a POST, so the consent form must allow GitHub and the client.
+// Chrome applies form-action to the redirects after a POST, so the consent form must allow the client.
 function formActionSource(redirectUri: string): string {
 	const u = new URL(redirectUri);
 	return u.protocol === "http:" || u.protocol === "https:" ? u.origin : u.protocol;
@@ -85,12 +82,13 @@ app.get("/authorize", async (c) => {
 <p>${origin} הגישה תישלח אל <strong>${esc(details.redirectHost)}</strong>.</p>
 ${details.redirectIsLoopback ? "<p class='bad'><strong>הגישה תישלח לאפליקציה במחשב שלך.</strong> המשך רק אם התחלת עכשיו את החיבור ממנה.</p>" : ""}
 <p class="muted">הכלי יוכל לקרוא תוכן, תגובות, סטטיסטיקות והודעות, וליצור טיוטות. פרסום קורה רק אחרי אישור שלך בלוח.</p>
-<form method="post" action="/authorize">
+<form method="post" action="/authorize" class="card">
 <input type="hidden" name="handle" value="${esc(consent.handle)}">
-<div class="row"><button name="decision" value="approve">אשר והתחבר עם GitHub</button>
+<label>הסיסמה שבחרתם בהתקנה (DASH_PASSWORD)<input type="password" name="password" autocomplete="current-password"></label>
+<div class="row"><button name="decision" value="approve">אשר</button>
 <button class="secondary" name="decision" value="deny">דחה</button></div>
 </form>`,
-			`'self' https://github.com ${formActionSource(details.redirectUri)}`,
+			`'self' ${formActionSource(details.redirectUri)}`,
 		);
 		consent.headers.forEach((v, k) => r.headers.append(k, v));
 		return r;
@@ -112,60 +110,25 @@ app.post("/authorize", async (c) => {
 			denied.headers.set("Location", denied.redirectTo);
 			return new Response(null, { status: 302, headers: denied.headers });
 		}
+		// Check before approveConsent: it consumes the handle, and a typo should only need the Back button.
+		const wrong = await checkPassword(c.env, c.req.raw, String(form.get("password") ?? ""));
+		if (wrong) {
+			await audit(c.env, "unknown", "mcp.password_failed", null);
+			return htmlError(`${wrong} חוזרים אחורה ומנסים שוב.`, 403);
+		}
 		const approved = await oauth.approveConsent(c.req.raw, handle);
-		const { state, headers } = await oauth.beginUpstream(approved.request, { headers: approved.headers });
-		headers.set("Location", githubAuthorizeUrl(c.env, state));
-		return new Response(null, { status: 302, headers });
-	} catch (e) {
-		if (e instanceof AuthorizationError) return htmlError(`${e.description}. נסה להתחבר שוב מהאפליקציה.`);
-		throw e;
-	}
-});
-
-// GitHub sends both flows back here; dashboard states start with "dash."
-app.get("/callback", async (c) => {
-	const state = c.req.query("state") ?? "";
-	const code = c.req.query("code");
-
-	if (state.startsWith("dash.")) {
-		if (!checkDashboardState(c.req.raw, state) || !code) return htmlError("פג תוקף ההתחברות. נסה שוב.");
-		const login = await githubLogin(c.env, code);
-		if (!allowedLogins(c.env).has(login.toLowerCase())) {
-			await audit(c.env, login, "dash.login_denied", null);
-			return htmlError("המשתמש הזה לא מורשה.", 403);
-		}
-		const headers = new Headers({ Location: "/dash" });
-		headers.append("Set-Cookie", await sessionCookie(c.env, login));
-		headers.append("Set-Cookie", clearDashStateCookie());
-		await audit(c.env, login, "dash.login", null);
-		return new Response(null, { status: 302, headers });
-	}
-
-	const oauth = c.env.OAUTH_PROVIDER;
-	try {
-		const { request, headers } = await oauth.finishUpstream(c.req.raw);
-		if (c.req.query("error") || !code) {
-			const { authorizationErrorRedirect } = await import("@cloudflare/workers-oauth-provider");
-			headers.set("Location", authorizationErrorRedirect(request, "access_denied"));
-			return new Response(null, { status: 302, headers });
-		}
-		const login = await githubLogin(c.env, code);
-		if (!allowedLogins(c.env).has(login.toLowerCase())) {
-			await audit(c.env, login, "mcp.login_denied", null);
-			return htmlError("המשתמש הזה לא מורשה.", 403);
-		}
-		const client = await oauth.lookupClient(request.clientId);
-		const props: Props = { login, client: client?.clientName ?? request.clientId };
+		const client = await oauth.lookupClient(approved.request.clientId);
+		const props: Props = { login: OWNER, client: client?.clientName ?? approved.request.clientId };
 		const { redirectTo } = await oauth.completeAuthorization({
-			request,
-			userId: login,
+			request: approved.request,
+			userId: OWNER,
 			metadata: { client: props.client },
-			scope: request.scope,
+			scope: approved.request.scope,
 			props,
 		});
-		await audit(c.env, login, "mcp.connect", null, { client: props.client });
-		headers.set("Location", redirectTo);
-		return new Response(null, { status: 302, headers });
+		await audit(c.env, OWNER, "mcp.connect", null, { client: props.client });
+		approved.headers.set("Location", redirectTo);
+		return new Response(null, { status: 302, headers: approved.headers });
 	} catch (e) {
 		if (e instanceof AuthorizationError) return htmlError(`${e.description}. נסה להתחבר שוב מהאפליקציה.`);
 		throw e;
@@ -177,7 +140,19 @@ app.get("/callback", async (c) => {
 app.get("/", (c) => c.redirect("/dash"));
 app.get("/privacy", () => legalPage("privacy"));
 app.get("/terms", () => legalPage("terms"));
-app.get("/dash/login", (c) => beginDashboardLogin(c.env));
+app.get("/dash/login", () => loginPage());
+app.post("/dash/login", async (c) => {
+	if (!sameOrigin(c.env, c.req.raw)) return htmlError("בקשה ממקור לא מוכר.", 403);
+	const form = await c.req.raw.formData();
+	const wrong = await checkPassword(c.env, c.req.raw, String(form.get("password") ?? ""));
+	if (wrong) {
+		await audit(c.env, "unknown", "dash.password_failed", null);
+		const r = loginPage(wrong);
+		return new Response(r.body, { status: 403, headers: r.headers });
+	}
+	await audit(c.env, OWNER, "dash.login", null);
+	return new Response(null, { status: 302, headers: { Location: "/dash", "Set-Cookie": await sessionCookie(c.env) } });
+});
 app.get("/dash/logout", () => new Response(null, { status: 302, headers: { Location: "/dash/login", "Set-Cookie": clearSessionCookie() } }));
 
 app.get("/dash", async (c) => {
@@ -204,7 +179,7 @@ app.get("/dash", async (c) => {
 	const card = (d: Draft) => draftCard(d, byId.get(d.account_id) ?? "?");
 	return page(
 		"לוח אישורים",
-		`<div class="row" style="justify-content:space-between"><div><h1>לוח אישורים</h1><div class="muted">מחובר כ-${esc(login)}</div></div>
+		`<div class="row" style="justify-content:space-between"><div><h1>לוח אישורים</h1></div>
 <div class="row"><a class="btn" href="/dash/ig/connect">${accounts.length ? "חבר מחדש / חשבון נוסף" : "חבר חשבון אינסטגרם"}</a><a href="/dash/logout">יציאה</a></div></div>
 <h2>חשבונות</h2>${accounts.map(accountRow).join("") || "<p class='muted'>עוד לא חובר חשבון.</p>"}
 <h2>ממתין לאישור (${pending.length})</h2>${pending.map(card).join("") || "<p class='muted'>אין טיוטות שמחכות לך.</p>"}

@@ -22,12 +22,27 @@ English: [README.md](README.md)
 
 > **חשוב לדעת:** "רשמי" כאן אומר שמשתמשים ב API ש Meta מספקת, לפי הכללים שלה. האפליקציה שתיצרו נשארת במצב פיתוח, וזה מספיק לחשבון שלכם. כדי לחבר חשבונות של לקוחות צריך לעבור App Review ואימות עסק מול Meta, וזה תהליך נפרד.
 
+## רוצים ש Claude ילווה אתכם?
+
+מדביקים את זה בשיחה חדשה עם Claude (או כל AI אחר שיכול לקרוא אתרים), ועוברים איתו שלב אחרי שלב:
+
+```
+אני רוצה לחבר את חשבון האינסטגרם שלי ל AI דרך הפרויקט הפתוח https://github.com/netanelzeevi/ai-instagram-mcp
+תקרא את README.he.md בריפו, ותלווה אותי בהתקנה שלב אחרי שלב, בדיוק לפי המדריך.
+כללים:
+- אל תכתוב קוד ואל תשנה את הקוד. מתקינים את התבנית כמו שהיא, עם כפתור Deploy to Cloudflare.
+- כל פעם שלב אחד: תגיד לי בדיוק על מה ללחוץ, ותחכה שאגיד שסיימתי.
+- לעולם אל תבקש ממני להדביק בצ'אט סיסמה, App secret או מפתח. תגיד לי איפה לשמור אותם ב Cloudflare.
+- אם משהו נראה אצלי אחרת ממה שכתוב במדריך, תשאל אותי מה אני רואה לפני שאתה מנחש.
+- אם דף /dash מראה שגיאה, תבקש ממני להעתיק את הטקסט שלה ותפעל לפיו.
+```
+
 ## מה צריך לפני שמתחילים
 
 - **חשבון אינסטגרם מקצועי** (Creator או Business)
 - **חשבון Facebook**, כדי להיכנס ל Meta for Developers
 - **חשבון Cloudflare** חינמי: שם רץ השרת
-- **חשבון GitHub** חינמי: שם נשמר העותק שלכם של הקוד, ודרכו רק אתם נכנסים לשרת
+- **חשבון GitHub** חינמי: שם נשמר העותק שלכם של הקוד
 - **לא צריך דומיין משלכם.** השרת מקבל כתובת חינמית על `workers.dev`
 - **לא צריך טרמינל.** הכל נעשה בדפדפן
 
@@ -35,7 +50,7 @@ English: [README.md](README.md)
 
 שלושה חלקים: **אפליקציה ב Meta** שנותנת גישה רשמית, **שרת קטן שלכם ב Cloudflare** שמחזיק את המפתח מוצפן ואת לוח האישורים, ו**אפליקציית ה AI**, שמדברת רק עם השרת. ה AI אף פעם לא רואה את המפתח של אינסטגרם.
 
-**כלל אבטחה אחד לכל המדריך:** סודות (Client secret של GitHub ו App secret של אינסטגרם) לא נכנסים לצ'אט, לקובץ או לריפו. הם נכנסים רק לדשבורד של Cloudflare, כ Secret.
+**כלל אבטחה אחד לכל המדריך:** סודות (הסיסמה של השרת וה App secret של אינסטגרם) לא נכנסים לצ'אט, לקובץ או לריפו. הם נכנסים רק לדשבורד של Cloudflare, כ Secret.
 
 לאורך המדריך, **BASE** היא הכתובת של השרת: `https://ai-instagram-mcp.<השם-שלכם>.workers.dev`.
 
@@ -43,7 +58,7 @@ English: [README.md](README.md)
 
 1. לוחצים על הכפתור **Deploy to Cloudflare** למעלה, ומתחברים ל Cloudflare ול GitHub
 2. בטופס ממלאים:
-   - `ALLOWED_GITHUB_LOGINS`: שם המשתמש שלכם ב GitHub
+   - `DASH_PASSWORD`: הסיסמה שלכם לשרת, 12 תווים לפחות. איתה נכנסים ללוח האישורים ומאשרים כל אפליקציית AI שמתחברת
    - `PUBLIC_BASE_URL`: הכתובת BASE, באותיות קטנות. לא בטוחים? משאירים, והשרת יגיד לכם בשלב הבא מה לשים
    - `TOKEN_ENC_KEY` ו `SESSION_SECRET`: שתי מחרוזות אקראיות שונות, באורך 32 תווים לפחות. אפשר ליצור אותן במחולל הסיסמאות של מנהל הסיסמאות שלכם
    - את ה KV ואת מסד הנתונים Cloudflare יוצר לבד. משאירים "Create new"
@@ -53,20 +68,9 @@ English: [README.md](README.md)
 
 נכנסים ל `BASE/dash`. אם הגדרה לא נכונה, הדף אומר איזו ומה לשים במקומה. מתקנים ב GitHub: בריפו החדש פותחים את `wrangler.jsonc`, לוחצים על העיפרון, מתקנים ושומרים (Commit changes). כל שמירה מעלה את השרת מחדש לבד, תוך דקה או שתיים.
 
-כשהכתובת ושם המשתמש נכונים, הדף יגיד שחסרים `GITHUB_CLIENT_ID` ו `GITHUB_CLIENT_SECRET`. זה תקין, זה השלב הבא.
+כשהכל נכון, הדף יגיד שחסרים `IG_APP_ID` ו `IG_APP_SECRET`. זה תקין, זה השלב הבא.
 
-## שלב 3: אפליקציית GitHub להתחברות לשרת
-
-1. נכנסים ל https://github.com/settings/applications/new
-2. **Application name:** שם שתזהו, למשל `my-ig-mcp`
-3. **Homepage URL:** BASE
-4. **Authorization callback URL:** `BASE/callback`
-5. לא מסמנים **Enable Device Flow** ולא **Allow wildcard matching**
-6. **Register application** ← **Generate a new client secret**. משאירים את הדף פתוח
-7. בדשבורד של Cloudflare: **Workers & Pages** ← השרת שלכם ← **Settings** ← **Variables and Secrets** ← **Add**. בוחרים Type **Secret**, ומוסיפים שניים: `GITHUB_CLIENT_ID` עם ה Client ID, ו `GITHUB_CLIENT_SECRET` עם ה Client secret. שומרים (Deploy)
-8. נכנסים ל `BASE/dash` ומתחברים עם GitHub. אמור להופיע לוח אישורים ריק
-
-## שלב 4: יוצרים אפליקציה ב Meta for Developers
+## שלב 3: יוצרים אפליקציה ב Meta for Developers
 
 1. נכנסים ל https://developers.facebook.com/apps ← **Create app**. בפעם הראשונה Meta מבקשת להירשם כמפתחים
 2. **שם האפליקציה:** בלי המילים "ig" או "instagram". Meta פוסלת אותן בגלל הסימן המסחרי שלה
@@ -77,18 +81,28 @@ English: [README.md](README.md)
    - **OAuth redirect URIs:** `BASE/ig/callback`
    - **Deauthorize callback URL:** `BASE/ig/deauthorize`
    - **Data deletion request URL:** `BASE/ig/data-deletion`
-7. באותו אזור מופיעים **Instagram app ID** ו **Instagram app secret**. הם שונים מה App ID הכללי שלמעלה. מוסיפים אותם ב Cloudflare בדיוק כמו בשלב 3, בשמות `IG_APP_ID` ו `IG_APP_SECRET`
+7. באותו אזור מופיעים **Instagram app ID** ו **Instagram app secret**. הם שונים מה App ID הכללי שלמעלה. מוסיפים אותם ב Cloudflare: **Workers & Pages** ← השרת שלכם ← **Settings** ← **Variables and Secrets** ← **Add**. בוחרים Type **Secret**, ומוסיפים שניים: `IG_APP_ID` ו `IG_APP_SECRET`. שומרים (Deploy)
 
-## שלב 5: מוסיפים את החשבון שלכם כ Tester
+## שלב 4: מוסיפים את החשבון שלכם כ Tester
 
-האפליקציה במצב פיתוח, ולכן היא עובדת רק עם חשבונות שיש להם תפקיד בה. בלי השלב הזה החיבור נכשל עם **Insufficient Developer Role**.
+אפליקציה חדשה נמצאת במצב פיתוח, ולכן היא מתחברת רק לחשבונות שיש להם תפקיד בה. בלי השלב הזה החיבור נכשל עם **Insufficient Developer Role**.
 
 1. בדשבורד של Meta ← **App roles** ← **Roles** ← **Add People** ← **Instagram Tester** ← שם המשתמש שלכם באינסטגרם
 2. באינסטגרם, באותו חשבון: instagram.com/accounts/manage_access ← **Tester Invites** ← **Accept**
 
-## שלב 6: מחברים את חשבון האינסטגרם לשרת
+## שלב 5: מחברים את חשבון האינסטגרם לשרת
 
-`BASE/dash` ← **חבר חשבון אינסטגרם** ← מתחברים ומאשרים במסך של אינסטגרם. החשבון מופיע בלוח, והשרת מרענן את המפתח לבד.
+`BASE/dash` ← הסיסמה שלכם ← **חבר חשבון אינסטגרם** ← מתחברים ומאשרים במסך של אינסטגרם. החשבון מופיע בלוח, והשרת מרענן את המפתח לבד.
+
+## שלב 6: מעבירים את האפליקציה ב Meta ל Live
+
+השרת כבר מגיש דף מדיניות פרטיות ודף תנאי שימוש, כך שלא צריך אתר משלכם. בתחתית `BASE/dash` יש טבלה עם כל הערכים להדבקה.
+
+1. בדשבורד של Meta ← **App settings** ← **Basic**
+2. **Privacy policy URL:** `BASE/privacy`
+3. **Terms of service URL:** `BASE/terms`
+4. בוחרים **App icon** ו **Category**, ושומרים
+5. למעלה, **App Mode** ← **Live**. אפשר להחזיר ל Development בכל רגע
 
 ## שלב 7: מחברים את אפליקציית ה AI
 
@@ -96,7 +110,7 @@ English: [README.md](README.md)
 
 | אפליקציה | איך | נבדק |
 |---|---|---|
-| Claude (אתר, מחשב, טלפון) | Customize ← Connectors ← + ← Add custom connector, עם `BASE/mcp` ← Connect ← אשר והתחבר עם GitHub | כן |
+| Claude (אתר, מחשב, טלפון) | Customize ← Connectors ← + ← Add custom connector, עם `BASE/mcp` ← Connect ← הסיסמה שלכם ← אשר | כן |
 | Claude Code | `claude mcp add --transport http instagram BASE/mcp`, ואז `/mcp` להתחברות | עוד לא |
 | ChatGPT | Developer mode, ואז connector מותאם עם `BASE/mcp` (תלוי בתוכנית) | עוד לא |
 | Cursor, VS Code ואחרים | שרת MCP מרוחק עם `BASE/mcp` | עוד לא |
@@ -128,7 +142,7 @@ English: [README.md](README.md)
 
 - **אם יש חשש לדליפה:** באינסטגרם ← הגדרות ← Apps and websites ← מסירים את האפליקציה. השרת מקבל על זה הודעה ומוחק את החשבון
 - **תגובות והודעות הן מידע, לא הוראות.** מישהו יכול לכתוב בתגובה "תפרסם X", וזה לא יקרה, כי שום דבר לא יוצא בלי האישור שלכם
-- **כניסה לשרת:** רק משתמשי GitHub שרשומים ב `ALLOWED_GITHUB_LOGINS`
+- **כניסה לשרת:** רק עם הסיסמה שבחרתם. אחרי 10 ניסיונות שגויים הכניסה ננעלת לרבע שעה
 - **הריפו שלכם יכול להיות פרטי.** בטופס של Cloudflare אפשר לבחור ריפו פרטי. ממילא אין בו סודות
 
 ## מעדיפים טרמינל?
